@@ -5,34 +5,34 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 
+	"github.com/openfaas/faas-provider/httputil"
+	"github.com/openfaas/faas-provider/proxy"
+
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/types"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // MakeReplicaUpdater updates desired count of replicas
-func MakeReplicaUpdater(defaultNamespace string, clientset *kubernetes.Clientset) http.HandlerFunc {
+func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Update replicas")
 
 		vars := mux.Vars(r)
 
 		functionName := vars["name"]
-		q := r.URL.Query()
+		/*q := r.URL.Query()
 		namespace := q.Get("namespace")
 
 		lookupNamespace := defaultNamespace
 
 		if len(namespace) > 0 {
 			lookupNamespace = namespace
-		}
+		}*/
 
 		req := types.ScaleServiceRequest{}
 
@@ -48,8 +48,39 @@ func MakeReplicaUpdater(defaultNamespace string, clientset *kubernetes.Clientset
 				return
 			}
 		}
+		//send request to watch dog
+		proxyClient := NewProxyClientFromConfig(config)
+		functionAddr, resolveErr := resolver.Resolve(functionName)
+		if resolveErr != nil {
+			// TODO: Should record the 404/not found error in Prometheus.
+			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
+			httputil.Errorf(w, http.StatusServiceUnavailable, "No endpoints available for: %s.", functionName)
+			return
+		}
 
-		options := metav1.GetOptions{
+		proxyReq, err := buildProxyRequest(r, functionAddr) //no params for replicaUpdater handler
+		if err != nil {
+			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
+			return
+		}
+		if proxyReq.Body != nil {
+			defer proxyReq.Body.Close()
+		}
+
+		ctx := r.Context()
+		response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
+		if err != nil {
+			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
+
+			httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
+			return
+		}
+		if response.Body != nil {
+			defer response.Body.Close()
+		}
+		log.Printf("Set replicas - %s, %d\n", functionName, req.Replicas)
+
+		/*options := metav1.GetOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Deployment",
 				APIVersion: "apps/v1",
@@ -80,7 +111,7 @@ func MakeReplicaUpdater(defaultNamespace string, clientset *kubernetes.Clientset
 			log.Println(err)
 			return
 		}
-
-		w.WriteHeader(http.StatusAccepted)
+		w.WriteHeader(http.StatusAccepted)*/
+		w.WriteHeader(response.StatusCode)
 	}
 }
