@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/openfaas/faas-provider/httputil"
 	"github.com/openfaas/faas-provider/proxy"
@@ -50,15 +51,18 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		}
 		//send request to watch dog
 		proxyClient := NewProxyClientFromConfig(config)
-		functionAddr, resolveErr := resolver.Resolve(functionName)
+		tmpAddr, resolveErr := resolver.Resolve(functionName)
 		if resolveErr != nil {
 			// TODO: Should record the 404/not found error in Prometheus.
 			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
 			httputil.Errorf(w, http.StatusServiceUnavailable, "No endpoints available for: %s.", functionName)
 			return
 		}
+		addrStr := tmpAddr.String()
+		addrStr += "/scale-updater"
+		functionAddr, _ := url.Parse(addrStr)
 
-		proxyReq, err := buildProxyRequest(r, functionAddr) //no params for replicaUpdater handler
+		proxyReq, err := buildProxyRequest(r, *functionAddr) //no params for replicaUpdater handler
 		if err != nil {
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 			return

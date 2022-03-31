@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -36,14 +37,19 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		var function *types.FunctionStatus
 
 		proxyClient := NewProxyClientFromConfig(config)
-		functionAddr, resolveErr := resolver.Resolve(functionName)
+
+		tmpAddr, resolveErr := resolver.Resolve(functionName)
 		if resolveErr != nil {
 			// TODO: Should record the 404/not found error in Prometheus.
 			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
 			httputil.Errorf(w, http.StatusServiceUnavailable, "No endpoints available for: %s.", functionName)
 			return
 		}
-		proxyReq, err := buildProxyRequest(r, functionAddr)
+		addrStr := tmpAddr.String()
+		addrStr += "/scale-reader"
+		functionAddr, _ := url.Parse(addrStr)
+
+		proxyReq, err := buildProxyRequest(r, *functionAddr)
 		if err != nil {
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 			return
@@ -73,6 +79,8 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 				return
 			}
 		}
+		function.Name = functionName
+
 		/*function, err := getService(lookupNamespace, functionName, lister)
 		if err != nil {
 			log.Printf("Unable to fetch service: %s %s\n", functionName, namespace)
@@ -85,7 +93,6 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 			return
 		}*/
 		d := time.Since(s)
-		//log.Printf("Replicas: %s.%s, (%d/%d) %dms\n", functionName, lookupNamespace, function.AvailableReplicas, function.Replicas, d.Milliseconds())
 		log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
 
 		functionBytes, err := json.Marshal(function)
