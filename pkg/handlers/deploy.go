@@ -157,7 +157,7 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	}
 
 	annotations := buildAnnotations(request)
-
+	runtime := annotations["runtime"]
 	probes, err := factory.MakeProbes(request)
 	if err != nil {
 		return nil, err
@@ -202,7 +202,8 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 					Annotations: annotations,
 				},
 				Spec: apiv1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:     nodeSelector,
+					RuntimeClassName: &runtime,
 					Containers: []apiv1.Container{
 						{
 							Name:  request.Service,
