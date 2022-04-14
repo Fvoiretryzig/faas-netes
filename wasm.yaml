@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: wasmtest
+    namespace: "test"
+    labels:
+        app: wasmtest
+spec:
+    selector:
+        matchLabels:
+            app: wasmtest
+    template:
+        metadata:
+            labels:
+                app: wasmtest
+        spec:
+            runtimeClassName: "nvidia"
+            containers:
+                - name: wasmtest
+                  image: lilytangt/wasmcuda:latest
+                  imagePullPolicy: Always
+
