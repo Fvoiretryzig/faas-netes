@@ -172,7 +172,7 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	if runtimeName, ok := annotations["runtime"]; ok {
 		runtime = &runtimeName
 	}
-
+	fmt.Println("this is kubernete runtime:", runtime, "!!!!!!!!!!!!")
 	deploymentSpec := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        request.Service,
