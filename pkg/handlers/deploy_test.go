@@ -4,7 +4,6 @@
 package handlers
 
 import (
-	"os"
 	"testing"
 
 	"github.com/openfaas/faas-netes/pkg/k8s"
@@ -90,16 +89,12 @@ func Test_SetNonRootUser(t *testing.T) {
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
 			request := types.FunctionDeployment{Service: "testfunc", Image: "alpine:latest"}
-			runtimeClassName := "runc"
-			if classname, exists := os.LookupEnv("runtimeClass"); exists {
-				runtimeClassName = classname
-			}
 			factory := k8s.NewFunctionFactory(fake.NewSimpleClientset(), k8s.DeploymentConfig{
 				LivenessProbe:  &k8s.ProbeConfig{},
 				ReadinessProbe: &k8s.ProbeConfig{},
 				SetNonRootUser: s.setNonRoot,
 			}, nil)
-			deployment, err := makeDeploymentSpec(request, map[string]*apiv1.Secret{}, factory, runtimeClassName)
+			deployment, err := makeDeploymentSpec(request, map[string]*apiv1.Secret{}, factory)
 			if err != nil {
 				t.Errorf("unexpected makeDeploymentSpec error: %s", err.Error())
 			}

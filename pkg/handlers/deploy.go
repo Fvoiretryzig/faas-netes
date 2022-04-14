@@ -30,7 +30,7 @@ import (
 const initialReplicasCount = 1
 
 // MakeDeployHandler creates a handler to create new functions in the cluster
-func MakeDeployHandler(functionNamespace string, factory k8s.FunctionFactory, runtimeClassName string) http.HandlerFunc {
+func MakeDeployHandler(functionNamespace string, factory k8s.FunctionFactory) http.HandlerFunc {
 	secrets := k8s.NewSecretsClient(factory.Client)
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func MakeDeployHandler(functionNamespace string, factory k8s.FunctionFactory, ru
 			return
 		}
 
-		deploymentSpec, specErr := makeDeploymentSpec(request, existingSecrets, factory, runtimeClassName)
+		deploymentSpec, specErr := makeDeploymentSpec(request, existingSecrets, factory)
 
 		var profileList []k8s.Profile
 		if request.Annotations != nil {
@@ -121,7 +121,7 @@ func MakeDeployHandler(functionNamespace string, factory k8s.FunctionFactory, ru
 	}
 }
 
-func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[string]*apiv1.Secret, factory k8s.FunctionFactory, runtimeClassName string) (*appsv1.Deployment, error) {
+func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[string]*apiv1.Secret, factory k8s.FunctionFactory) (*appsv1.Deployment, error) {
 	envVars := buildEnvVars(&request)
 
 	initialReplicas := int32p(initialReplicasCount)
@@ -166,9 +166,11 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	allowPrivilegeEscalation := false
 
 	//modify runtime
+	defaultRuntime := "runc"
 	var runtime *string
-	if runtimeClassName != "runc" {
-		runtime = &runtimeClassName
+	runtime = &defaultRuntime
+	if runtimeName, ok := annotations["runtime"]; ok {
+		runtime = &runtimeName
 	}
 
 	deploymentSpec := &appsv1.Deployment{
