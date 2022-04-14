@@ -33,7 +33,7 @@ build-docker:
 	docker build \
 	--build-arg GIT_COMMIT=$(GIT_COMMIT) \
 	--build-arg VERSION=$(VERSION) \
-	-t $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) .
+	-t lilytangt/faas-netes:latest .
 
 .PHONY: build-buildx
 build-buildx:
@@ -41,7 +41,7 @@ build-buildx:
 	docker buildx create --use --name=multiarch --node=multiarch && \
 	docker buildx build \
 		--push \
-		--platform linux/amd64 \
+		--platform linux/arm64 \
         --build-arg GIT_COMMIT=$(GIT_COMMIT) \
         --build-arg VERSION=$(VERSION) \
 		--tag $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) \
