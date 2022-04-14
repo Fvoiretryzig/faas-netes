@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 	"time"
 
 	clientset "github.com/openfaas/faas-netes/pkg/client/clientset/versioned"
@@ -214,11 +215,14 @@ func runController(setup serverSetup) {
 	listers := startInformers(setup, stopCh, operator)
 
 	functionLookup := k8s.NewFunctionLookup(config.DefaultFunctionNamespace, listers.EndpointsInformer.Lister())
-
+	runtimeClassName := "runc"
+	if classname, exists := os.LookupEnv("runtimeClass"); exists {
+		runtimeClassName = classname
+	}
 	bootstrapHandlers := providertypes.FaaSHandlers{
 		FunctionProxy:        proxy.NewHandlerFunc(config.FaaSConfig, functionLookup),
 		DeleteHandler:        handlers.MakeDeleteHandler(config.DefaultFunctionNamespace, kubeClient),
-		DeployHandler:        handlers.MakeDeployHandler(config.DefaultFunctionNamespace, factory),
+		DeployHandler:        handlers.MakeDeployHandler(config.DefaultFunctionNamespace, factory, runtimeClassName),
 		FunctionReader:       handlers.MakeFunctionReader(config.DefaultFunctionNamespace, listers.DeploymentInformer.Lister()),
 		ReplicaReader:        handlers.MakeReplicaReader(config.FaaSConfig, functionLookup),
 		ReplicaUpdater:       handlers.MakeReplicaUpdater(config.FaaSConfig, functionLookup),
