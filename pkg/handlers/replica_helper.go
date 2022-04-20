@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -92,7 +93,9 @@ func buildProxyRequest(originalReq *http.Request, baseURL url.URL) (*http.Reques
 		Scheme:   baseURL.Scheme,
 		Host:     host,
 		RawQuery: originalReq.URL.RawQuery,
+		Path:     baseURL.Path,
 	}
+	log.Println("this is buildProxy url: ", url)
 
 	upstreamReq, err := http.NewRequest(originalReq.Method, url.String(), nil)
 	if err != nil {
