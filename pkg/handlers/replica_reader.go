@@ -34,7 +34,7 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		if len(namespace) > 0 {
 			lookupNamespace = namespace
 		}*/
-		var function *types.FunctionStatus
+		var function *replicaFuncStatus
 
 		proxyClient := NewProxyClientFromConfig(config)
 

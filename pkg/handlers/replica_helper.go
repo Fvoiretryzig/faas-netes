@@ -14,6 +14,35 @@ const (
 	defaultContentType = "text/plain"
 )
 
+type replicaFuncStatus struct {
+
+	// Name is the name of the function deployment
+	Name string `json:"name,omitempty"`
+
+	// Image is a fully-qualified container image
+	Image string `json:"image,omitempty"`
+
+	// Namespace for the function, if supported by the faas-provider
+	Namespace string `json:"namespace,omitempty"`
+
+	// EnvProcess overrides the fprocess environment variable and can be used
+	// with the watchdog
+	EnvProcess string `json:"envProcess,omitempty"`
+
+	// EnvVars set environment variables for the function runtime
+	EnvVars map[string]string `json:"envVars,omitempty"`
+
+	// InvocationCount count of invocations
+	InvocationCount float64 `json:"invocationCount,omitempty"`
+
+	// Replicas desired within the cluster
+	Replicas uint64 `json:"replicas,omitempty"`
+
+	// AvailableReplicas is the count of replicas ready to receive
+	// invocations as reported by the faas-provider
+	AvailableReplicas uint64 `json:"availableReplicas,omitempty"`
+}
+
 func NewProxyClientFromConfig(config types.FaaSConfig) *http.Client {
 	return NewProxyClient(config.GetReadTimeout(), config.GetMaxIdleConns(), config.GetMaxIdleConnsPerHost())
 }
