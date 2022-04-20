@@ -47,6 +47,7 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		}
 		addrStr := tmpAddr.String()
 		addrStr += "/scale-reader"
+		log.Println("this is addrStr: ", addrStr)
 		functionAddr, _ := url.Parse(addrStr)
 
 		proxyReq, err := buildProxyRequest(r, *functionAddr)
@@ -61,15 +62,17 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 
 		s := time.Now()
 		response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
+		log.Println("response: ", response)
+		log.Println("this is response body:", response.Body)
 		if err != nil {
 			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
-
 			httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
 			return
 		}
 		if response.Body != nil {
 			defer response.Body.Close()
 			bytesIn, _ := ioutil.ReadAll(r.Body)
+			log.Println("this is replica reader bytesin: ", string(bytesIn))
 			marshalErr := json.Unmarshal(bytesIn, &function)
 			if marshalErr != nil {
 				w.WriteHeader(http.StatusBadRequest)
