@@ -65,6 +65,7 @@ func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.Hand
 	proxyClient := NewProxyClientFromConfig(config)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("this is function invoke!!!!!")
 		if r.Body != nil {
 			defer r.Body.Close()
 		}
