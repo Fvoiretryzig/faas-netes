@@ -157,6 +157,7 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	}
 
 	annotations := buildAnnotations(request)
+
 	probes, err := factory.MakeProbes(request)
 	if err != nil {
 		return nil, err
@@ -165,15 +166,6 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	enableServiceLinks := false
 	allowPrivilegeEscalation := false
 
-	//modify runtime
-	defaultRuntime := "runc"
-	var runtime *string
-	runtime = &defaultRuntime
-	if runtimeName, ok := annotations["runtime"]; ok {
-		runtime = &runtimeName
-		delete(annotations, "runtime")
-	}
-	fmt.Println("this is kubernete runtime:", *runtime, "!!!!!!!!!!!!")
 	deploymentSpec := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        request.Service,
@@ -237,14 +229,12 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 					DNSPolicy:     corev1.DNSClusterFirst,
 					// EnableServiceLinks injects ENV vars about every other service within
 					// the namespace.
-					RuntimeClassName:   runtime,
 					EnableServiceLinks: &enableServiceLinks,
 				},
 			},
 		},
 	}
-	fmt.Println("this is deployment runtime", deploymentSpec.Spec.Template.Spec.RuntimeClassName)
-	fmt.Println("this is deployment:\n", *deploymentSpec)
+
 	factory.ConfigureReadOnlyRootFilesystem(request, deploymentSpec)
 	factory.ConfigureContainerUserID(deploymentSpec)
 
