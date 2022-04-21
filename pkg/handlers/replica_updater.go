@@ -21,7 +21,7 @@ import (
 // MakeReplicaUpdater updates desired count of replicas
 func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Update replicas")
+		log.Println("this is MakeReplicaUpdater!!!!!!!")
 
 		vars := mux.Vars(r)
 
@@ -52,6 +52,7 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		//send request to watch dog
 		proxyClient := NewProxyClientFromConfig(config)
 		tmpAddr, resolveErr := resolver.Resolve(functionName)
+
 		if resolveErr != nil {
 			// TODO: Should record the 404/not found error in Prometheus.
 			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())

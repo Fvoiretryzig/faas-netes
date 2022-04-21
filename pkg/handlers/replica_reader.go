@@ -51,8 +51,6 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		functionAddr, _ := url.Parse(addrStr)
 
 		proxyReq, err := buildProxyRequest(r, *functionAddr)
-		tmpBytes, _ := ioutil.ReadAll(proxyReq.Body)
-
 		if err != nil {
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 			return
