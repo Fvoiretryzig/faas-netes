@@ -40,7 +40,9 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		if r.Body != nil {
 			defer r.Body.Close()
 			bytesIn, _ := ioutil.ReadAll(r.Body)
+			log.Println("this is updater!!!body: ", string(bytesIn))
 			marshalErr := json.Unmarshal(bytesIn, &req)
+
 			if marshalErr != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				msg := "Cannot parse request. Please pass valid JSON."
@@ -68,6 +70,8 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 			return
 		}
+		tmpByte, _ := ioutil.ReadAll(proxyReq.Body)
+		log.Println("this is request sent to watchdog body:", string(tmpByte), "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		if proxyReq.Body != nil {
 			defer proxyReq.Body.Close()
 		}
