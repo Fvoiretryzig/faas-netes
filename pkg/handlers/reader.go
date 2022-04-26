@@ -43,24 +43,14 @@ func MakeFunctionReader(config types.FaaSConfig, resolver proxy.BaseURLResolver,
 			return
 		}
 
-		functions, err := getServiceList(lookupNamespace, deploymentLister)
+		functions, err := getServiceList(config, resolver, r, lookupNamespace, deploymentLister)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
-		//update replica value(get from watchdog)
-		for _, function := range functions {
-			replicaFunc, err := updateReplica(function.Name, config, resolver, r)
-			if err != nil {
-				log.Println("read replica failed: ", err)
-			} else {
-				log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
-				function.Replicas = replicaFunc.Replicas
-				function.AvailableReplicas = replicaFunc.AvailableReplicas
-			}
-		}
+
 		functionBytes, err := json.Marshal(functions)
 		if err != nil {
 			glog.Errorf("Failed to marshal functions: %s", err.Error())
@@ -75,7 +65,7 @@ func MakeFunctionReader(config types.FaaSConfig, resolver proxy.BaseURLResolver,
 	}
 }
 
-func getServiceList(functionNamespace string, deploymentLister v1.DeploymentLister) ([]types.FunctionStatus, error) {
+func getServiceList(config types.FaaSConfig, resolver proxy.BaseURLResolver, r *http.Request, functionNamespace string, deploymentLister v1.DeploymentLister) ([]types.FunctionStatus, error) {
 	functions := []types.FunctionStatus{}
 
 	sel := labels.NewSelector()
@@ -95,6 +85,16 @@ func getServiceList(functionNamespace string, deploymentLister v1.DeploymentList
 		if item != nil {
 			function := k8s.AsFunctionStatus(*item)
 			if function != nil {
+				log.Printf("this is in get service %s function.", function.Name)
+				//update replica value(get from watchdog)
+				replicaFunc, err := updateReplica(function.Name, config, resolver, r)
+				if err != nil {
+					log.Println("read replica failed: ", err)
+				} else {
+					log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
+					function.Replicas = replicaFunc.Replicas
+					function.AvailableReplicas = replicaFunc.AvailableReplicas
+				}
 				functions = append(functions, *function)
 			}
 		}
