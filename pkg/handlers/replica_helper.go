@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/openfaas/faas-provider/proxy"
 	"github.com/openfaas/faas-provider/types"
 )
 
@@ -124,4 +127,46 @@ func copyHeaders(destination http.Header, source *http.Header) {
 		copy(vClone, v)
 		destination[k] = vClone
 	}
+}
+
+func updateReplica(functionName string, config types.FaaSConfig, resolver proxy.BaseURLResolver, r *http.Request) (*replicaFuncStatus, error) {
+	var function *replicaFuncStatus
+	proxyClient := NewProxyClientFromConfig(config)
+	tmpAddr, resolveErr := resolver.Resolve(functionName)
+	if resolveErr != nil {
+		// TODO: Should record the 404/not found error in Prometheus.
+		log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
+		return nil, resolveErr
+	}
+	addrStr := tmpAddr.String()
+	addrStr += "/scale-reader"
+	functionAddr, _ := url.Parse(addrStr)
+	proxyReq, err := buildProxyRequest(r, *functionAddr)
+	if err != nil {
+		return nil, err
+	}
+	if proxyReq.Body != nil {
+		defer proxyReq.Body.Close()
+	}
+	ctx := r.Context()
+	s := time.Now()
+	response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
+	if err != nil {
+		log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
+		return nil, err
+	}
+	if response.Body != nil {
+		defer response.Body.Close()
+		bytesIn, _ := ioutil.ReadAll(response.Body)
+		marshalErr := json.Unmarshal(bytesIn, &function)
+		if marshalErr != nil {
+			msg := "Cannot parse watchdog read replica response. Please pass valid JSON."
+			log.Println(msg, marshalErr)
+			return nil, marshalErr
+		}
+	}
+	function.Name = functionName
+	d := time.Since(s)
+	log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
+	return function, nil
 }

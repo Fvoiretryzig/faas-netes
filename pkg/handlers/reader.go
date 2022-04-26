@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/openfaas/faas-provider/proxy"
 	types "github.com/openfaas/faas-provider/types"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -19,7 +20,7 @@ import (
 )
 
 // MakeFunctionReader handler for reading functions deployed in the cluster as deployments.
-func MakeFunctionReader(defaultNamespace string, deploymentLister v1.DeploymentLister) http.HandlerFunc {
+func MakeFunctionReader(config types.FaaSConfig, resolver proxy.BaseURLResolver, defaultNamespace string, deploymentLister v1.DeploymentLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		q := r.URL.Query()
@@ -43,7 +44,17 @@ func MakeFunctionReader(defaultNamespace string, deploymentLister v1.DeploymentL
 			w.Write([]byte(err.Error()))
 			return
 		}
-
+		//update replica value(get from watchdog)
+		for _, function := range functions {
+			replicaFunc, err := updateReplica(function.Name, config, resolver, r)
+			if err != nil {
+				log.Println("read replica failed: ", err)
+			} else {
+				log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
+				function.Replicas = replicaFunc.Replicas
+				function.AvailableReplicas = replicaFunc.AvailableReplicas
+			}
+		}
 		functionBytes, err := json.Marshal(functions)
 		if err != nil {
 			glog.Errorf("Failed to marshal functions: %s", err.Error())

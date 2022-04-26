@@ -47,7 +47,6 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		}
 		addrStr := tmpAddr.String()
 		addrStr += "/scale-reader"
-		log.Println("this is addrStr: ", addrStr)
 		functionAddr, _ := url.Parse(addrStr)
 
 		proxyReq, err := buildProxyRequest(r, *functionAddr)
