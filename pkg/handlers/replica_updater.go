@@ -35,26 +35,9 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 			lookupNamespace = namespace
 		}*/
 
-		req := types.ScaleServiceRequest{}
-
-		if r.Body != nil {
-			defer r.Body.Close()
-			bytesIn, _ := ioutil.ReadAll(r.Body)
-			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bytesIn))
-			marshalErr := json.Unmarshal(bytesIn, &req)
-
-			if marshalErr != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				msg := "Cannot parse request. Please pass valid JSON."
-				w.Write([]byte(msg))
-				log.Println(msg, marshalErr)
-				return
-			}
-		}
 		//send request to watch dog
 		proxyClient := NewProxyClientFromConfig(config)
 		tmpAddr, resolveErr := resolver.Resolve(functionName)
-
 		if resolveErr != nil {
 			// TODO: Should record the 404/not found error in Prometheus.
 			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
@@ -70,14 +53,14 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 			return
 		}
-		tmpByte, _ := ioutil.ReadAll(proxyReq.Body)
-		log.Println("this is request sent to watchdog body:", string(tmpByte), "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+		log.Println("this is request sent to watchdog body:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		if proxyReq.Body != nil {
 			defer proxyReq.Body.Close()
 		}
-
 		ctx := r.Context()
 		response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
+
 		if err != nil {
 			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
 
@@ -86,6 +69,22 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		}
 		if response.Body != nil {
 			defer response.Body.Close()
+		}
+
+		req := types.ScaleServiceRequest{}
+		if r.Body != nil {
+			defer r.Body.Close()
+			bytesIn, _ := ioutil.ReadAll(r.Body)
+			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bytesIn))
+			marshalErr := json.Unmarshal(bytesIn, &req)
+
+			if marshalErr != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				msg := "Cannot parse request. Please pass valid JSON."
+				w.Write([]byte(msg))
+				log.Println(msg, marshalErr)
+				return
+			}
 		}
 		log.Printf("Set replicas - %s, %d\n", functionName, req.Replicas)
 
