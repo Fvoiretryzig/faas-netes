@@ -6,6 +6,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -22,7 +23,12 @@ import (
 // MakeFunctionReader handler for reading functions deployed in the cluster as deployments.
 func MakeFunctionReader(config types.FaaSConfig, resolver proxy.BaseURLResolver, defaultNamespace string, deploymentLister v1.DeploymentLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		log.Println("this is function Reader url: ", *r.URL, "")
+		if r.Body != nil {
+			defer r.Body.Close()
+			bytesIn, _ := ioutil.ReadAll(r.Body)
+			log.Println("this is reader request body: ", string(bytesIn))
+		}
 		q := r.URL.Query()
 		namespace := q.Get("namespace")
 
