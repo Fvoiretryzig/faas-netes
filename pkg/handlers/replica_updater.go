@@ -21,7 +21,7 @@ import (
 // MakeReplicaUpdater updates desired count of replicas
 func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("this is MakeReplicaUpdater!!!!!!!")
+		log.Println("this is MakeReplicaUpdater!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 		vars := mux.Vars(r)
 
@@ -40,7 +40,7 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		if r.Body != nil {
 			defer r.Body.Close()
 			bytesIn, _ := ioutil.ReadAll(r.Body)
-			log.Println("this is updater!!!body: ", string(bytesIn))
+			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bytesIn))
 			marshalErr := json.Unmarshal(bytesIn, &req)
 
 			if marshalErr != nil {

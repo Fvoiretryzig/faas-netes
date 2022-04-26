@@ -98,7 +98,7 @@ func buildProxyRequest(originalReq *http.Request, baseURL url.URL) (*http.Reques
 		RawQuery: originalReq.URL.RawQuery,
 		Path:     baseURL.Path,
 	}
-	log.Println("this is buildProxy url: ", url)
+	//log.Println("this is buildProxy url: ", url)
 
 	upstreamReq, err := http.NewRequest(originalReq.Method, url.String(), nil)
 	if err != nil {

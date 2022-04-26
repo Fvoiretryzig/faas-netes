@@ -6,7 +6,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -23,12 +22,6 @@ import (
 // MakeFunctionReader handler for reading functions deployed in the cluster as deployments.
 func MakeFunctionReader(config types.FaaSConfig, resolver proxy.BaseURLResolver, defaultNamespace string, deploymentLister v1.DeploymentLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("this is function Reader url: ", *r.URL, "")
-		if r.Body != nil {
-			defer r.Body.Close()
-			bytesIn, _ := ioutil.ReadAll(r.Body)
-			log.Println("this is reader request body: ", string(bytesIn))
-		}
 		q := r.URL.Query()
 		namespace := q.Get("namespace")
 
@@ -85,13 +78,12 @@ func getServiceList(config types.FaaSConfig, resolver proxy.BaseURLResolver, r *
 		if item != nil {
 			function := k8s.AsFunctionStatus(*item)
 			if function != nil {
-				log.Printf("this is in get service %s function.", function.Name)
 				//update replica value(get from watchdog)
 				replicaFunc, err := updateReplica(function.Name, config, resolver, r)
 				if err != nil {
 					log.Println("read replica failed: ", err)
 				} else {
-					log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
+					//log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
 					function.Replicas = replicaFunc.Replicas
 					function.AvailableReplicas = replicaFunc.AvailableReplicas
 				}
