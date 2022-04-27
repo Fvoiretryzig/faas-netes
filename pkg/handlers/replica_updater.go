@@ -22,7 +22,7 @@ import (
 // MakeReplicaUpdater updates desired count of replicas
 func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("this is MakeReplicaUpdater!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		log.Println("this is MakeReplicaUpdater!")
 
 		vars := mux.Vars(r)
 
@@ -60,7 +60,7 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 			return
 		}
 
-		log.Println("this is request sent to watchdog body:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		//log.Println("this is request sent to watchdog body:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		if proxyReq.Body != nil {
 			defer proxyReq.Body.Close()
 		}
@@ -79,7 +79,7 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		req := types.ScaleServiceRequest{}
 		if r.Body != nil {
 			defer r.Body.Close()
-			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bodyBytes))
+			//log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bodyBytes))
 			marshalErr := json.Unmarshal(bodyBytes, &req)
 
 			if marshalErr != nil {

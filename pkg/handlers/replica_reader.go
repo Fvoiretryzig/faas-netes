@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/httputil"
@@ -59,7 +58,7 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		}
 		ctx := r.Context()
 
-		s := time.Now()
+		//s := time.Now()
 		response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
 		if err != nil {
 			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
@@ -91,8 +90,8 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}*/
-		d := time.Since(s)
-		log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
+		//d := time.Since(s)
+		//log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
 
 		functionBytes, err := json.Marshal(function)
 		if err != nil {
