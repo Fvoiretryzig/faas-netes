@@ -5,6 +5,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -48,6 +49,11 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		addrStr += "/scale-updater"
 		functionAddr, _ := url.Parse(addrStr)
 
+		//save r body
+		bodyBytes, _ := ioutil.ReadAll(r.Body)
+		r.Body.Close()
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
 		proxyReq, err := buildProxyRequest(r, *functionAddr) //no params for replicaUpdater handler
 		if err != nil {
 			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
@@ -63,7 +69,6 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 
 		if err != nil {
 			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
-
 			httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
 			return
 		}
@@ -74,9 +79,8 @@ func MakeReplicaUpdater(config types.FaaSConfig, resolver proxy.BaseURLResolver)
 		req := types.ScaleServiceRequest{}
 		if r.Body != nil {
 			defer r.Body.Close()
-			bytesIn, _ := ioutil.ReadAll(r.Body)
-			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bytesIn))
-			marshalErr := json.Unmarshal(bytesIn, &req)
+			log.Println("this is updater!!!!!!!!!!!!!!!!!!!!!body: ", string(bodyBytes))
+			marshalErr := json.Unmarshal(bodyBytes, &req)
 
 			if marshalErr != nil {
 				w.WriteHeader(http.StatusBadRequest)
