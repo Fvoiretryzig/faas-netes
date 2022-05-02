@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/openfaas/faas-netes/pkg/k8s"
@@ -122,22 +121,27 @@ func MakeDeployHandler(functionNamespace string, factory k8s.FunctionFactory) ht
 }
 
 func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[string]*apiv1.Secret, factory k8s.FunctionFactory) (*appsv1.Deployment, error) {
-	envVars := buildEnvVars(&request)
-
 	initialReplicas := int32p(initialReplicasCount)
 	labels := map[string]string{
 		"faas_function": request.Service,
 	}
 
 	if request.Labels != nil {
-		if min := getMinReplicaCount(*request.Labels); min != nil {
+		/*if min := getMinReplicaCount(*request.Labels); min != nil {
 			initialReplicas = min
-		}
+		}*/
 		for k, v := range *request.Labels {
 			labels[k] = v
 		}
 	}
-
+	log.Println("this is request Label:", labels)
+	if maxscale, ok := labels["com.openfaas.scale.max"]; ok {
+		request.EnvVars["ScaleMax"] = maxscale
+	}
+	if minscale, ok := labels["com.openfaas.scale.min"]; ok {
+		request.EnvVars["ScaleMin"] = minscale
+	}
+	envVars := buildEnvVars(&request)
 	nodeSelector := createSelector(request.Constraints)
 
 	resources, resourceErr := createResources(request)
@@ -312,7 +316,7 @@ func buildEnvVars(request *types.FunctionDeployment) []corev1.EnvVar {
 	sort.SliceStable(envVars, func(i, j int) bool {
 		return strings.Compare(envVars[i].Name, envVars[j].Name) == -1
 	})
-
+	log.Println("this is envVars: ", envVars)
 	return envVars
 }
 
@@ -379,7 +383,7 @@ func createResources(request types.FunctionDeployment) (*apiv1.ResourceRequireme
 	return resources, nil
 }
 
-func getMinReplicaCount(labels map[string]string) *int32 {
+/*func getMinReplicaCount(labels map[string]string) *int32 {
 	if value, exists := labels["com.openfaas.scale.min"]; exists {
 		minReplicas, err := strconv.Atoi(value)
 		if err == nil && minReplicas > 0 {
@@ -390,4 +394,4 @@ func getMinReplicaCount(labels map[string]string) *int32 {
 	}
 
 	return nil
-}
+}*/
