@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/openfaas/faas-netes/pkg/k8s"
@@ -383,7 +384,7 @@ func createResources(request types.FunctionDeployment) (*apiv1.ResourceRequireme
 	return resources, nil
 }
 
-/*func getMinReplicaCount(labels map[string]string) *int32 {
+func getMinReplicaCount(labels map[string]string) *int32 {
 	if value, exists := labels["com.openfaas.scale.min"]; exists {
 		minReplicas, err := strconv.Atoi(value)
 		if err == nil && minReplicas > 0 {
@@ -394,4 +395,4 @@ func createResources(request types.FunctionDeployment) (*apiv1.ResourceRequireme
 	}
 
 	return nil
-}*/
+}
