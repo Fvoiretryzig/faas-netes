@@ -137,10 +137,10 @@ func makeDeploymentSpec(request types.FunctionDeployment, existingSecrets map[st
 	}
 	log.Println("this is request Label:", labels)
 	if maxscale, ok := labels["com.openfaas.scale.max"]; ok {
-		request.EnvVars["ScaleMax"] = maxscale
+		request.EnvVars["max_scale"] = maxscale
 	}
 	if minscale, ok := labels["com.openfaas.scale.min"]; ok {
-		request.EnvVars["ScaleMin"] = minscale
+		request.EnvVars["min_scale"] = minscale
 	}
 	envVars := buildEnvVars(&request)
 	nodeSelector := createSelector(request.Constraints)

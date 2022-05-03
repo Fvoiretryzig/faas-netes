@@ -149,7 +149,7 @@ func updateReplica(functionName string, config types.FaaSConfig, resolver proxy.
 		defer proxyReq.Body.Close()
 	}
 	ctx := r.Context()
-	s := time.Now()
+	//s := time.Now()
 	response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
 	if err != nil {
 		log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
@@ -166,7 +166,7 @@ func updateReplica(functionName string, config types.FaaSConfig, resolver proxy.
 		}
 	}
 	function.Name = functionName
-	d := time.Since(s)
-	log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
+	//d := time.Since(s)
+	//log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
 	return function, nil
 }

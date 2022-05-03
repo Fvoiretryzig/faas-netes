@@ -21,7 +21,7 @@ import (
 //func MakeReplicaReader(defaultNamespace string, lister v1.DeploymentLister) http.HandlerFunc {
 func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("this is replicaReader!!!!!")
+		//log.Println("this is replicaReader!!!!!")
 		vars := mux.Vars(r)
 
 		functionName := vars["name"]
