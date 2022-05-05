@@ -35,12 +35,16 @@ func (ReadConfig) Read(hasEnv ftypes.HasEnv) (BootstrapConfig, error) {
 	setNonRootUser := ftypes.ParseBoolValue(hasEnv.Getenv("set_nonroot_user"), false)
 
 	readinessProbeInitialDelaySeconds := ftypes.ParseIntValue(hasEnv.Getenv("readiness_probe_initial_delay_seconds"), 3)
-	readinessProbeTimeoutSeconds := ftypes.ParseIntValue(hasEnv.Getenv("readiness_probe_timeout_seconds"), 1)
-	readinessProbePeriodSeconds := ftypes.ParseIntValue(hasEnv.Getenv("readiness_probe_period_seconds"), 10)
+	readinessProbeTimeoutSeconds := ftypes.ParseIntValue(hasEnv.Getenv("readiness_probe_timeout_seconds"), 15)
+	readinessProbePeriodSeconds := ftypes.ParseIntValue(hasEnv.Getenv("readiness_probe_period_seconds"), 20)
 
 	livenessProbeInitialDelaySeconds := ftypes.ParseIntValue(hasEnv.Getenv("liveness_probe_initial_delay_seconds"), 3)
-	livenessProbeTimeoutSeconds := ftypes.ParseIntValue(hasEnv.Getenv("liveness_probe_timeout_seconds"), 1)
-	livenessProbePeriodSeconds := ftypes.ParseIntValue(hasEnv.Getenv("liveness_probe_period_seconds"), 10)
+	livenessProbeTimeoutSeconds := ftypes.ParseIntValue(hasEnv.Getenv("liveness_probe_timeout_seconds"), 15)
+	livenessProbePeriodSeconds := ftypes.ParseIntValue(hasEnv.Getenv("liveness_probe_period_seconds"), 20)
+	log.Printf("this is linvess timeout %ds, this is readinessProbe timeout %ds", livenessProbeTimeoutSeconds, readinessProbeTimeoutSeconds)
+	log.Println("this is get env readiness: ", hasEnv.Getenv("readiness_probe_timeout_seconds"))
+	log.Println("this is ge env liveness: ", hasEnv.Getenv("liveness_probe_timeout_seconds"))
+
 	imagePullPolicy := ftypes.ParseString(hasEnv.Getenv("image_pull_policy"), "Always")
 
 	if !validPullPolicyOptions[imagePullPolicy] {
