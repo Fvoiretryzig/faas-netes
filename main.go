@@ -219,7 +219,7 @@ func runController(setup serverSetup) {
 		DeleteHandler:        handlers.MakeDeleteHandler(config.DefaultFunctionNamespace, kubeClient),
 		DeployHandler:        handlers.MakeDeployHandler(config.DefaultFunctionNamespace, factory),
 		FunctionReader:       handlers.MakeFunctionReader(config.FaaSConfig, functionLookup, config.DefaultFunctionNamespace, listers.DeploymentInformer.Lister()),
-		ReplicaReader:        handlers.MakeReplicaReader(config.FaaSConfig, functionLookup),
+		ReplicaReader:        handlers.MakeReplicaReader(config.FaaSConfig, functionLookup, config.DefaultFunctionNamespace, listers.DeploymentInformer.Lister()),
 		ReplicaUpdater:       handlers.MakeReplicaUpdater(config.FaaSConfig, functionLookup),
 		UpdateHandler:        handlers.MakeUpdateHandler(config.DefaultFunctionNamespace, factory),
 		HealthHandler:        handlers.MakeHealthHandler(),

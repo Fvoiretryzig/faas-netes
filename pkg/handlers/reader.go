@@ -78,7 +78,7 @@ func getServiceList(config types.FaaSConfig, resolver proxy.BaseURLResolver, r *
 		if item != nil {
 			function := k8s.AsFunctionStatus(*item)
 			if function != nil {
-				log.Println("[getServiceList] ", function.Name, "Labels: ", function.Labels)
+				//log.Println("[getServiceList] ", function.Name, "Labels: ", function.Labels)
 				//update replica value(get from watchdog)
 				replicaFunc, err := updateReplica(function.Name, config, resolver, r)
 				if err != nil {

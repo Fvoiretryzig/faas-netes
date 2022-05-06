@@ -6,80 +6,39 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net/http"
-	"net/url"
+	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/openfaas/faas-provider/httputil"
+	"github.com/openfaas/faas-netes/pkg/k8s"
 	"github.com/openfaas/faas-provider/proxy"
 	types "github.com/openfaas/faas-provider/types"
+	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/client-go/listers/apps/v1"
+	glog "k8s.io/klog"
 )
 
 // MakeReplicaReader reads the amount of replicas for a deployment
-//func MakeReplicaReader(defaultNamespace string, lister v1.DeploymentLister) http.HandlerFunc {
-func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) http.HandlerFunc {
+func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver, defaultNamespace string, lister v1.DeploymentLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//log.Println("this is replicaReader!!!!!")
+
 		vars := mux.Vars(r)
 
 		functionName := vars["name"]
-		/*q := r.URL.Query()
+		q := r.URL.Query()
 		namespace := q.Get("namespace")
 
 		lookupNamespace := defaultNamespace
 
 		if len(namespace) > 0 {
 			lookupNamespace = namespace
-		}*/
-		var function *replicaFuncStatus
-
-		proxyClient := NewProxyClientFromConfig(config)
-
-		tmpAddr, resolveErr := resolver.Resolve(functionName)
-		if resolveErr != nil {
-			// TODO: Should record the 404/not found error in Prometheus.
-			log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
-			httputil.Errorf(w, http.StatusServiceUnavailable, "No endpoints available for: %s.", functionName)
-			return
 		}
-		addrStr := tmpAddr.String()
-		addrStr += "/scale-reader"
-		functionAddr, _ := url.Parse(addrStr)
 
-		proxyReq, err := buildProxyRequest(r, *functionAddr)
-		if err != nil {
-			httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
-			return
-		}
-		if proxyReq.Body != nil {
-			defer proxyReq.Body.Close()
-		}
-		ctx := r.Context()
+		s := time.Now()
 
-		//s := time.Now()
-		response, err := proxyClient.Do(proxyReq.WithContext(ctx)) //send request to watchdog
-		if err != nil {
-			log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
-			httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
-			return
-		}
-		if response.Body != nil {
-			defer response.Body.Close()
-			bytesIn, _ := ioutil.ReadAll(response.Body)
-			marshalErr := json.Unmarshal(bytesIn, &function)
-			if marshalErr != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				msg := "Cannot parse watchdog read replica response. Please pass valid JSON."
-				w.Write([]byte(msg))
-				log.Println(msg, marshalErr)
-				return
-			}
-		}
-		function.Name = functionName
-
-		/*function, err := getService(lookupNamespace, functionName, lister)
+		function, err := getService(lookupNamespace, functionName, lister)
 		if err != nil {
 			log.Printf("Unable to fetch service: %s %s\n", functionName, namespace)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -89,13 +48,22 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 		if function == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
-		}*/
-		//d := time.Since(s)
-		//log.Printf("Replicas: %s, (%d/%d) %dms\n", functionName, function.AvailableReplicas, function.Replicas, d.Milliseconds())
-
+		}
+		//get true function replica
+		replicaFunc, err := updateReplica(function.Name, config, resolver, r)
+		if err != nil {
+			log.Println("read replica failed: ", err)
+		} else {
+			//log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
+			function.Replicas = replicaFunc.Replicas
+			function.AvailableReplicas = replicaFunc.AvailableReplicas
+			function.InvocationCount = replicaFunc.InvocationCount
+		}
+		d := time.Since(s)
+		log.Printf("Replicas: %s.%s, (%d/%d) %dms\n", functionName, lookupNamespace, function.AvailableReplicas, function.Replicas, d.Milliseconds())
 		functionBytes, err := json.Marshal(function)
 		if err != nil {
-			log.Printf("Failed to marshal function: %s", err.Error())
+			glog.Errorf("Failed to marshal function: %s", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Failed to marshal function"))
 			return
@@ -108,7 +76,7 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 }
 
 // getService returns a function/service or nil if not found
-/*func getService(functionNamespace string, functionName string, lister v1.DeploymentLister) (*types.FunctionStatus, error) {
+func getService(functionNamespace string, functionName string, lister v1.DeploymentLister) (*types.FunctionStatus, error) {
 
 	item, err := lister.Deployments(functionNamespace).
 		Get(functionName)
@@ -129,4 +97,4 @@ func MakeReplicaReader(config types.FaaSConfig, resolver proxy.BaseURLResolver) 
 	}
 
 	return nil, fmt.Errorf("function: %s not found", functionName)
-}*/
+}
