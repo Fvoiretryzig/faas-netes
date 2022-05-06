@@ -78,14 +78,16 @@ func getServiceList(config types.FaaSConfig, resolver proxy.BaseURLResolver, r *
 		if item != nil {
 			function := k8s.AsFunctionStatus(*item)
 			if function != nil {
+				log.Println("[getServiceList] ", function.Name, "Labels: ", function.Labels)
 				//update replica value(get from watchdog)
 				replicaFunc, err := updateReplica(function.Name, config, resolver, r)
 				if err != nil {
-					//log.Println("read replica failed: ", err)
+					log.Println("read replica failed: ", err)
 				} else {
 					//log.Printf("update %s function replicas %d to %d", function.Name, function.Replicas, replicaFunc.Replicas)
 					function.Replicas = replicaFunc.Replicas
 					function.AvailableReplicas = replicaFunc.AvailableReplicas
+					function.InvocationCount = replicaFunc.InvocationCount
 				}
 				functions = append(functions, *function)
 			}

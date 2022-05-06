@@ -135,7 +135,7 @@ func updateReplica(functionName string, config types.FaaSConfig, resolver proxy.
 	tmpAddr, resolveErr := resolver.Resolve(functionName)
 	if resolveErr != nil {
 		// TODO: Should record the 404/not found error in Prometheus.
-		log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
+		//log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
 		return nil, resolveErr
 	}
 	addrStr := tmpAddr.String()
